@@ -1,4 +1,4 @@
-patch: "D:\\tmp\\techLogData\\log"
+patch: "D:\\tmp\\1C_event_log\\1C_event_log"
 redis_addr: "localhost:6379"
 redis_login: ""
 redis_password: ""
@@ -6,6 +6,6 @@ elastic_addr: "http://localhost:9200"
 elastic_login: ""
 elastic_password: ""
 tech_log_details_events: "Context|Txt|Descr|DeadlockConnectionIntersections"
-patch_logfile: "./logs/"
+patch_logfile: "D:\\tmp\\techLogData\\log"
 log_level: 1
 maxdop: 4
