@@ -33,6 +33,7 @@ type conf struct {
 	ElasticAddr          string `yaml:"elastic_addr"`
 	ElasticLogin         string `yaml:"elastic_login"`
 	ElasticPassword      string `yaml:"elastic_password"`
+	ElasticIndx          string `yaml:"elastic_indx"`
 	TechLogDetailsEvents string `yaml:"tech_log_details_events"`
 	MaxDop               int    `yaml:"maxdop"`
 	PatchLogFile         string `yaml:"patch_logfile"`
@@ -259,14 +260,24 @@ func readFile(file string, pos *int64) ([]byte, error) {
 	return data, nil
 }
 
+func getIndexName(config *conf) string {
+	today := time.Now()
+
+	str := strings.ReplaceAll(config.ElasticIndx, "yyyy", strconv.Itoa(today.Year()))
+	str = strings.ReplaceAll(str, "MM", strconv.Itoa(int(today.Month())))
+	str = strings.ReplaceAll(str, "dd", strconv.Itoa(today.Day()))
+	str = strings.ReplaceAll(str, "hh", strconv.Itoa(today.Hour()))
+	str = strings.ReplaceAll(str, "mm", strconv.Itoa(today.Minute()))
+	str = strings.ReplaceAll(str, "ss", strconv.Itoa(today.Second()))
+
+	return str
+}
+
 func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf, c chan int) {
 
-	year, month, _ := time.Now().Date()
-
-	// ответ по операциям bulk
 	var (
 		rightString string
-		indexName   = "tech_journal_" + strconv.Itoa(year) + strconv.Itoa(int(month))
+		indexName   = getIndexName(config)
 		buf         bytes.Buffer
 		res         *esapi.Response
 		raw         map[string]interface{}
