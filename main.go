@@ -178,7 +178,7 @@ func getMapEvent(str *string) map[string]string {
 }
 
 func replaceGaps(str *string) {
-	regexGaps := regexp.MustCompile("'{1}[\\w+,]+[\\w+]{1}'{1}")
+	regexGaps := regexp.MustCompile("('{1}.*?'{1})") //regexGaps := regexp.MustCompile("'{1}[\\w+,]+[\\w+]{1}'{1}")
 	gapsStrings := regexGaps.FindAllString(*str, -1)
 	for _, gapString := range gapsStrings {
 		rightStringTmp := strings.Replace(*str, gapString, strings.ReplaceAll(gapString, ",", " "), -1)

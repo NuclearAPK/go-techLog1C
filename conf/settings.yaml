@@ -1,5 +1,5 @@
 # Расположение логов тех журнала 1С
-patch: "D:\\tmp\\1C_event_log\\1C_event_log"
+patch: "D:\\tmp\\1"
 #
 # Параметры подключения к Redis
 redis_addr: "localhost:6379"
@@ -28,4 +28,4 @@ patch_logfile: "D:\\tmp\\techLogData\\log"
 log_level: 1
 #
 # Уровень параллелизма
-maxdop: 4
+maxdop: 1
