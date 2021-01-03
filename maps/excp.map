@@ -1,0 +1,96 @@
+{
+  "mappings": {
+    "properties": {
+      "t_clientid": {
+        "type": "text"
+      },
+      "clientid": {
+        "type": "text"
+      },
+      "appid": {
+        "type": "text"
+      },
+      "dbms": {
+        "type": "text"
+      },
+      "func": {
+        "type": "text"
+      },
+      "database": {
+        "type": "text"
+      },
+      "exception": {
+        "type": "text"
+      },
+      "duration": {
+        "type": "long"
+      },
+      "dbcopy": {
+        "type": "text"
+      },
+      "usr": {
+        "type": "text"
+      },
+      "process": {
+        "type": "text"
+      },
+      "p_processname": {
+        "type": "text"
+      },
+      "name": {
+        "type": "text"
+      },
+      "dbpid": {
+        "type": "text"
+      },
+      "dumpfile": {
+        "type": "text"
+      },
+      "osexception": {
+        "type": "text"
+      },
+      "t_computername": {
+        "type": "text"
+      },
+      "context": {
+        "type": "text"
+      },
+      "sessionid": {
+        "type": "text"
+      },
+      "dumperror": {
+        "type": "text"
+      },
+      "descr": {
+        "type": "text"
+      },
+      "osthread": {
+        "type": "text"
+      },
+      "t_applicationname": {
+        "type": "text"
+      },
+      "t_connectid": {
+        "type": "text"
+      },
+      "date": {
+        "type": "date"
+      },
+      "processNameID": {
+        "type": "text"
+      },
+      "SourceFile": {
+        "type": "text"
+      },
+      "event_techlog": {
+        "type": "text"
+      },
+      "level": {
+        "type": "integer"
+      },
+      "unclassified": {
+        "type": "text"
+      }
+    }
+  }
+}

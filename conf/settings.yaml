@@ -1,22 +1,25 @@
 # Расположение логов тех журнала 1С
-patch: "D:\\tmp\\1"
+patch: "D:\\tmp\\1C_event_log\\1C_event_log"
 #
 # Параметры подключения к Redis
 redis_addr: "localhost:6379"
 redis_login: ""
 redis_password: ""
+redis_database: 0
 #
 # Параметры подключения к Elasticsearch
 elastic_addr: "http://localhost:9200"
 elastic_login: ""
 elastic_password: ""
+elastic_maxretries: 10
+elastic_bulksize: 2000000
 #
 # Правила формирования индекса Elasticsearch
-# Пример: "tech_journal_yyyyMMddhh" в конце к имени индекса всегда добавляется имя процесса, например rphost_11212 
-elastic_indx: "tech_journal_yyyyMMddhh"
+# Пример: "tech_journal_{event}_yyyyMMddhh", где event - CONN, EXCP, etc...
+elastic_indx: "tech_journal_{event}_yyyyMMddhh"
 #
 # Типы событий тех журнала, которые могут содержать длинные строки '...' и переносы строк \n
-tech_log_details_events: "Context|Txt|Descr|DeadlockConnectionIntersections"
+tech_log_details_events: "Context|Txt|Descr|DeadlockConnectionIntersections|ManagerList|ServerList|Sql|Sdbl"
 #
 # Путь, где будут распологаться логи программы
 patch_logfile: "D:\\tmp\\techLogData\\log"
@@ -25,7 +28,11 @@ patch_logfile: "D:\\tmp\\techLogData\\log"
 #   1 - только ошибки
 #   2 - ошибки и предупреждения 
 #   3 - ошибки, предупреждения и информация
-log_level: 1
+log_level: 3
 #
 # Уровень параллелизма
-maxdop: 1
+maxdop: 14
+#
+# 0 - отключена сортировка файлов по размеру, 1 - сортировка по убыванию, 2 - сортировка по возрастанию
+# полезно включать при массовых операциях, для равномерного распределения файлов по потокам
+sorting: 0

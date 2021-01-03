@@ -1,0 +1,87 @@
+{
+  "mappings": {
+    "properties": {
+      "t_clientid": {
+        "type": "text"
+      },
+      "func": {
+        "type": "text"
+      },
+      "duration": {
+        "type": "long"
+      },
+      "ibs": {
+        "type": "text"
+      },
+      "ib": {
+        "type": "text"
+      },
+      "id": {
+        "type": "text"
+      },
+      "rphostalive": {
+        "type": "text"
+      },
+      "detachseances": {
+        "type": "text"
+      },
+      "osthread": {
+        "type": "text"
+      },
+      "appl": {
+        "type": "text"
+      },
+      "usr": {
+        "type": "text"
+      },
+      "process": {
+        "type": "text"
+      },
+      "p_processname": {
+        "type": "text"
+      },
+      "name": {
+        "type": "text"
+      },
+      "t_computername": {
+        "type": "text"
+      },
+      "context": {
+        "type": "text"
+      },
+      "nmb": {
+        "type": "integer"
+      },
+      "sessionid": {
+        "type": "text"
+      },
+      "isattached": {
+        "type": "integer"
+      },
+      "t_applicationname": {
+        "type": "text"
+      },
+      "t_connectid": {
+        "type": "text"
+      },
+      "date": {
+        "type": "date"
+      },
+      "processNameID": {
+        "type": "text"
+      },
+      "SourceFile": {
+        "type": "text"
+      },
+      "event_techlog": {
+        "type": "text"
+      },
+      "level": {
+        "type": "integer"
+      },
+      "unclassified": {
+        "type": "text"
+      }
+    }
+  }
+}

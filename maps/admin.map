@@ -1,0 +1,111 @@
+{
+  "mappings": {
+    "properties": {
+      "t_clientid": {
+        "type": "text"
+      },
+      "t_connectid": {
+        "type": "text"
+      },
+      "t_computername": {
+        "type": "text"
+      },
+      "t_applicationname": {
+        "type": "text"
+      },
+      "appid": {
+        "type": "text"
+      },
+      "cluster": {
+        "type": "text"
+      },
+      "clusterid": {
+        "type": "text"
+      },
+      "conndn": {
+        "type": "text"
+      },
+      "connection": {
+        "type": "text"
+      },
+      "connectionid": {
+        "type": "text"
+      },
+      "dnalcd": {
+        "type": "text"
+      },
+      "dnfrom": {
+        "type": "text"
+      },
+      "dnmsg": {
+        "type": "text"
+      },
+      "dnprm": {
+        "type": "text"
+      },
+      "dnto": {
+        "type": "text"
+      },
+      "result": {
+        "type": "text"
+      },
+      "process": {
+        "type": "text"
+      },
+      "p_processname": {
+        "type": "text"
+      },
+      "osthread": {
+        "type": "text"
+      },
+      "func": {
+        "type": "text"
+      },
+      "duration": {
+        "type": "long"
+      },
+      "administrator": {
+        "type": "text"
+      },
+      "usr": {
+        "type": "text"
+      },
+      "sessionid": {
+        "type": "text"
+      },
+      "schjobdn": {
+        "type": "text"
+      },
+      "ref": {
+        "type": "text"
+      },
+      "mode": {
+        "type": "text"
+      },
+      "infobaseid": {
+        "type": "text"
+      },
+      "host": {
+        "type": "text"
+      },
+      "date": {
+        "type": "date"
+      },
+      "processNameID": {
+        "type": "text"
+      },
+      "SourceFile": {
+        "type": "text"
+      },
+      "event_techlog": {
+        "type": "text"
+      },
+      "level": {
+        "type": "integer"
+      },
+      "unclassified": {
+        "type": "text"
+      }
+    }
+  }
+}

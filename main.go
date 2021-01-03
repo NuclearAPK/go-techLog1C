@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -30,12 +31,16 @@ type conf struct {
 	RedisAddr            string `yaml:"redis_addr"`
 	RedisLogin           string `yaml:"redis_login"`
 	RedisPassword        string `yaml:"redis_password"`
+	RedisDatabase        int    `yaml:"redis_database"`
 	ElasticAddr          string `yaml:"elastic_addr"`
 	ElasticLogin         string `yaml:"elastic_login"`
 	ElasticPassword      string `yaml:"elastic_password"`
 	ElasticIndx          string `yaml:"elastic_indx"`
+	ElasticMaxRetrires   int    `yaml:"elastic_maxretries"`
+	ElasticBulkSize      int64  `yaml:"elastic_bulksize"`
 	TechLogDetailsEvents string `yaml:"tech_log_details_events"`
 	MaxDop               int    `yaml:"maxdop"`
+	Sorting              int    `yaml:"sorting"`
 	PatchLogFile         string `yaml:"patch_logfile"`
 	LogLevel             int    `yaml:"log_level"`
 }
@@ -59,6 +64,11 @@ type bulkResponse struct {
 	} `json:"items"`
 }
 
+type files struct {
+	Path string
+	Size int64
+}
+
 func (c *conf) getConfig() *conf {
 
 	yamlFile, err := ioutil.ReadFile("./conf/settings.yaml")
@@ -71,18 +81,6 @@ func (c *conf) getConfig() *conf {
 	}
 
 	return c
-}
-
-// FilePathWalkDir - получаем все файлы внутри директории
-func FilePathWalkDir(root string) ([]string, error) {
-	var files []string
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if !info.IsDir() {
-			files = append(files, path)
-		}
-		return nil
-	})
-	return files, err
 }
 
 // получаем дату время в формате jdata
@@ -108,7 +106,10 @@ func track() time.Time {
 }
 
 func duration(start time.Time) {
-	log.Printf("Final time is: %v\n", time.Since(start))
+	logr.WithFields(logr.Fields{
+		"object": "Reading tech log 1C",
+		"title":  "Succeful reading",
+	}).Infof("Final time is: %v\n", time.Since(start))
 }
 
 func getFileParametersRedis(conn redis.Conn, idFile string) int64 {
@@ -153,7 +154,7 @@ func getMapEvent(str *string) map[string]string {
 
 		if runeIndex > 0 {
 
-			PropertyTmp := Event[0:runeIndex]
+			PropertyTmp := strings.ToLower(Event[0:runeIndex])
 			Property = strings.Replace(PropertyTmp, ":", "_", 1)
 			ValueTmp := Event[runeIndex+1:]
 			Value = ValueTmp
@@ -177,8 +178,9 @@ func getMapEvent(str *string) map[string]string {
 	return paramets
 }
 
+// заменяет , на пробел в строках вида ' , ,  '
 func replaceGaps(str *string) {
-	regexGaps := regexp.MustCompile("('{1}.*?'{1})") //regexGaps := regexp.MustCompile("'{1}[\\w+,]+[\\w+]{1}'{1}")
+	regexGaps := regexp.MustCompile("('{1}.*?'{1})")
 	gapsStrings := regexGaps.FindAllString(*str, -1)
 	for _, gapString := range gapsStrings {
 		rightStringTmp := strings.Replace(*str, gapString, strings.ReplaceAll(gapString, ",", " "), -1)
@@ -199,39 +201,20 @@ func isLetter(c rune) bool {
 	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
 }
 
-func getFilesPacked(files []string, maxdop int) map[int][]string {
+func getFilesPacked(arrFiles []files, maxdop int) map[int][]string {
 
 	take := make(map[int][]string)
 
-	lenFiles := len(files)
+	lenFiles := len(arrFiles)
 
-	if (lenFiles <= maxdop) || (maxdop == 0) {
-
-		take[0] = files
-
-	} else {
-
-		var num int = lenFiles / maxdop
-		var remainder int = lenFiles - num*maxdop
-
-		for i := 0; i < maxdop; i++ {
-
-			var Package []string
-
-			for j := 0; j < num; j++ {
-				Package = append(Package, files[j+num*i])
-			}
-
-			take[i] = Package
-		}
-
-		if remainder < maxdop {
-			for i := 0; i < remainder; i++ {
-				take[i] = append(take[i], files[lenFiles-i-1])
-			}
+	var j int = 0
+	for i := 0; i < lenFiles; i++ {
+		take[j] = append(take[j], arrFiles[i].Path)
+		j++
+		if j == maxdop {
+			j = 0
 		}
 	}
-
 	return take
 }
 
@@ -260,6 +243,7 @@ func readFile(file string, pos *int64) ([]byte, error) {
 	return data, nil
 }
 
+// формирование наименование индекса по правилам, заданным в conf файле
 func getIndexName(config *conf) string {
 	today := time.Now()
 
@@ -273,22 +257,54 @@ func getIndexName(config *conf) string {
 	return str
 }
 
+// считываем карты индексов в соответствие
+func getMappings() map[string]string {
+
+	mapping := make(map[string]string)
+	files, err := getFilesArray("./maps/")
+
+	if err != nil {
+		logr.WithFields(logr.Fields{
+			"object": "Maps files",
+			"title":  "Failure to scan directory",
+		}).Error(err)
+	}
+
+	for _, file := range files {
+		var pos int64 = 0
+		data, err := readFile(file.Path, &pos)
+		if err != nil {
+			logr.WithFields(logr.Fields{
+				"object": "Map file",
+				"title":  "Failure to read map file",
+			}).Error(err)
+		}
+		key := strings.Split(file.Path, "\\")[1]
+		key = strings.TrimRight(key, ".map")
+		mapping[key] = string(data)
+	}
+	return mapping
+}
+
 func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf, c chan int) {
 
 	var (
 		rightString string
 		indexName   = getIndexName(config)
-		buf         bytes.Buffer
 		res         *esapi.Response
 		raw         map[string]interface{}
 		blk         *bulkResponse
 	)
 
-	// 0.2. подключаемся к эластичному
+	// 1. подключаемся к эластичному
 	cfgElastic := elasticsearch.Config{
-		Addresses: []string{config.ElasticAddr},
-		Username:  config.ElasticLogin,
-		Password:  config.ElasticPassword,
+		Addresses:     []string{config.ElasticAddr},
+		Username:      config.ElasticLogin,
+		Password:      config.ElasticPassword,
+		RetryOnStatus: []int{502, 503, 504, 429},
+		RetryBackoff:  func(i int) time.Duration { return time.Duration(i) * 100 * time.Millisecond },
+		MaxRetries:    config.ElasticMaxRetrires,
+		EnableMetrics: true,
 	}
 	es, err := elasticsearch.NewClient(cfgElastic)
 	if err != nil {
@@ -305,11 +321,13 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 			"title":  "Unable to get response",
 		}).Fatal(err)
 	}
+	res.Body.Close()
 
-	// 0.3. подключаемся к redis
+	// 2. подключаемся к redis
 	conn, err := redis.Dial("tcp", config.RedisAddr,
 		redis.DialUsername(config.RedisLogin),
 		redis.DialPassword(config.RedisPassword),
+		redis.DialDatabase(config.RedisDatabase),
 	)
 
 	if err != nil {
@@ -320,7 +338,10 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 	}
 	defer conn.Close()
 
-	// 0.4. работаем с файлами
+	// 3. считываем мэппинг для индексов elastic из map файлов
+	mapping := getMappings()
+
+	// 4. работаем с файлами
 	RegExpEvents := fmt.Sprintf("(%s)=", config.TechLogDetailsEvents)
 	re := regexp.MustCompile("[0-9][0-9]:[0-9][0-9].[0-9]+-")
 	reContextstrings := regexp.MustCompile(RegExpEvents)
@@ -337,7 +358,7 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 		// устанавливаем блокировку на файл
 		setFileParametersRedis(conn, jobFile, 1)
 
-		// 0.5 получаем дату из имени файла и тип процесса
+		// 5. получаем дату из имени файла и тип процесса
 		fileSplitter := strings.Split(file, "\\")
 		lenArray := len(fileSplitter)
 		if lenArray < 2 {
@@ -346,32 +367,11 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 
 		fileDate := strings.TrimRight(fileSplitter[lenArray-1], ".log")
 
-		// 0.6. проверяем индекс, если нет - создаем
-		idx := indexName + "_" + strings.ToLower(fileSplitter[lenArray-2])
-		res, err = es.Indices.Exists([]string{idx})
-		if err != nil && config.LogLevel == 2 {
-			logr.WithFields(logr.Fields{
-				"object": "Elastic",
-				"title":  "Indices.Exists",
-			}).Warning(err)
-		}
+		// 6. проверяем индекс, если нет - создаем
+		processNameID := strings.ToLower(fileSplitter[lenArray-2])
 
-		res.Body.Close()
-
-		if res.StatusCode == 404 {
-			_, err = es.Indices.Create(idx)
-			if err != nil {
-				deleteFileParametersRedis(conn, jobFile)
-				logr.WithFields(logr.Fields{
-					"object": "Elastic",
-					"title":  "Cannot create index",
-				}).Fatal(err)
-			}
-		}
-
-		// 0.7. получаем идентификатор файла для DB Redis
-		idFile := fileSplitter[len(fileSplitter)-2] + "_" + fileDate
-		pos := getFileParametersRedis(conn, idFile)
+		// 7. получаем идентификатор файла для DB Redis
+		pos := getFileParametersRedis(conn, file)
 
 		// 0.8. считываем файл с позиции idFile
 		data, err := readFile(file, &pos)
@@ -395,8 +395,13 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 			continue
 		}
 
+		var mapEventsBuffer = map[string]*bytes.Buffer{}
+		mapIndicies := make(map[string]string)
+
 		// 0.9. разбор строк, разделенных регулярным выражением по времени событий
 		// пробегаемся по частям строк с заголовками
+		var IndexPostfix int = 0
+
 		for idx, word := range headings {
 			word := strings.TrimRight(word, "-")
 
@@ -418,7 +423,7 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 					var lenSb int = 0
 					lenGarbageString := len(garbageStrings[i])
 
-					for j := lenWords - lenGarbageString - tmpLen; j > 0; j-- {
+					for j := (lenWords - lenGarbageString - tmpLen - 1); j > 0; j-- {
 
 						c := words[idx+1][j]
 						lenSb++
@@ -431,9 +436,8 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 					}
 
 					tmpLen += lenSb + lenGarbageString
-					multilineMap[Reverse(sb.String())] = garbageString
+					multilineMap[strings.ToLower(Reverse(sb.String()))] = garbageString
 				}
-
 				rightString = strings.TrimRight(garbageStrings[0], ",")
 			} else {
 				rightString = words[idx+1]
@@ -443,6 +447,7 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 
 			paramets := getMapEvent(&rightString)
 			paramets["date"] = dataEvent
+			paramets["processNameID"] = processNameID
 
 			for keyM, valueM := range multilineMap {
 				paramets[keyM] = valueM
@@ -465,12 +470,23 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 			jsonStr := append(empData, "\n"...)
 
 			// заголовок bulk
-			meta := []byte(fmt.Sprintf(`{ "index" : { "_id" : "%s" } }%s`, md5String, "\n"))
+			idxName := strings.Replace(indexName, "{event}", strings.ToLower(paramets["event_techlog"]), -1)
+			mapIndicies[paramets["event_techlog"]] = idxName
 
-			buf.Grow(len(meta) + len(jsonStr))
-			buf.Write(meta)
-			buf.Write(jsonStr)
+			meta := []byte(fmt.Sprintf(`{ "index" : { "_index" : "%s","_id" : "%s" } }%s`, idxName, md5String, "\n"))
 
+			keyBuffer := paramets["event_techlog"] + "_" + strconv.Itoa(IndexPostfix)
+			if mapEventsBuffer[keyBuffer] == nil {
+				mapEventsBuffer[keyBuffer] = new(bytes.Buffer)
+			}
+			// заголовок + source события
+			mapEventsBuffer[keyBuffer].Grow(len(meta) + len(jsonStr))
+			mapEventsBuffer[keyBuffer].Write(meta)
+			mapEventsBuffer[keyBuffer].Write(jsonStr)
+
+			if int64(mapEventsBuffer[keyBuffer].Len()) >= config.ElasticBulkSize {
+				IndexPostfix++
+			}
 		}
 
 		if config.LogLevel == 3 {
@@ -479,71 +495,103 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 				"title":  "Succeful reading",
 			}).Infof("Package %d, file %s", keyInPackage, file)
 		}
+		// обходим события. Каждому событию соответстует bulk буффер
+		for keyM, buf := range mapEventsBuffer {
 
-		// 0.11. отправляем в эластик
-		res, err = es.Bulk(bytes.NewReader(buf.Bytes()), es.Bulk.WithIndex(idx))
-		if err != nil {
-			deleteFileParametersRedis(conn, jobFile)
-			logr.WithFields(logr.Fields{
-				"object": "Elastic",
-				"title":  "Failure indexing batch",
-			}).Fatal(err)
-		}
-		// если ошибка запроса - выводим ошибку
-		if res.IsError() {
-			if err := json.NewDecoder(res.Body).Decode(&raw); err != nil {
-				deleteFileParametersRedis(conn, jobFile)
+			keyMaster := keyM[0:strings.Index(keyM, "_")]
+			idxName := mapIndicies[keyMaster]
+			res, err = es.Indices.Exists([]string{idxName})
+			if err != nil && config.LogLevel == 2 {
 				logr.WithFields(logr.Fields{
 					"object": "Elastic",
-					"title":  "Failure to to parse response body",
-				}).Fatal(err)
-			} else {
-				deleteFileParametersRedis(conn, jobFile)
-				logr.WithFields(logr.Fields{
-					"object": "Elastic",
-					"title":  "Request",
-				}).Errorf("[%d] %s: %s (%s)",
-					res.StatusCode,
-					raw["error"].(map[string]interface{})["type"],
-					raw["error"].(map[string]interface{})["reason"],
-					file,
-				)
+					"title":  "Indices.Exists",
+				}).Warning(err)
 			}
-			// Успешный ответ может по-прежнему содержать ошибки для определенных документов...
-		} else {
-			if err := json.NewDecoder(res.Body).Decode(&blk); err != nil {
+			res.Body.Close()
+
+			if res.StatusCode == 404 {
+				currentMapping := mapping[strings.ToLower(keyMaster)]
+				_, err = es.Indices.Create(
+					idxName,
+					es.Indices.Create.WithBody(strings.NewReader(currentMapping)),
+					es.Indices.Create.WithWaitForActiveShards("1"),
+					es.Indices.Create.WithTimeout(60),
+				)
+				if err != nil {
+					deleteFileParametersRedis(conn, jobFile)
+					logr.WithFields(logr.Fields{
+						"object": "Elastic",
+						"title":  "Cannot create index",
+					}).Fatal(err)
+				}
+			}
+
+			// 0.11. отправляем в эластик
+			res, err = es.Bulk(
+				bytes.NewReader(buf.Bytes()),
+				es.Bulk.WithIndex(idxName),
+				es.Bulk.WithRefresh("false"),
+			)
+			if err != nil {
 				deleteFileParametersRedis(conn, jobFile)
 				logr.WithFields(logr.Fields{
 					"object": "Elastic",
-					"title":  "Failure to to parse response body",
+					"title":  "Failure indexing batch",
 				}).Fatal(err)
+			}
+			// если ошибка запроса - выводим ошибку
+			if res.IsError() {
+				if err := json.NewDecoder(res.Body).Decode(&raw); err != nil {
+					deleteFileParametersRedis(conn, jobFile)
+					logr.WithFields(logr.Fields{
+						"object": "Elastic",
+						"title":  "Failure to to parse response body",
+					}).Fatal(err)
+				} else {
+					deleteFileParametersRedis(conn, jobFile)
+					logr.WithFields(logr.Fields{
+						"object": "Elastic",
+						"title":  "Request",
+					}).Errorf("[%d] %s: %s (%s)",
+						res.StatusCode,
+						raw["error"].(map[string]interface{})["type"],
+						raw["error"].(map[string]interface{})["reason"],
+						file,
+					)
+				}
+				// Успешный ответ может по-прежнему содержать ошибки для определенных документов...
 			} else {
-				for _, d := range blk.Items {
-					// ... для любых других HTTP статусов > 201 ...
-					if d.Index.Status > 201 {
-						deleteFileParametersRedis(conn, jobFile)
-						// ... и распечатать статус ответа и информацию об ошибке ...
-						logr.WithFields(logr.Fields{
-							"object": "Elastic",
-							"title":  "Request",
-						}).Errorf("[%d]: %s: %s: %s: %s",
-							d.Index.Status,
-							d.Index.Error.Type,
-							d.Index.Error.Reason,
-							d.Index.Error.Cause.Type,
-							d.Index.Error.Cause.Reason,
-						)
-					} else {
-						setFileParametersRedis(conn, idFile, pos) // 0.12. записываем позицию в базу
-						deleteFileParametersRedis(conn, jobFile)  // 0.13. удаляем ключ
+				if err := json.NewDecoder(res.Body).Decode(&blk); err != nil {
+					deleteFileParametersRedis(conn, jobFile)
+					logr.WithFields(logr.Fields{
+						"object": "Elastic",
+						"title":  "Failure to to parse response body",
+					}).Fatal(err)
+				} else {
+					for _, d := range blk.Items {
+						// ... для любых других HTTP статусов > 201 ...
+						if d.Index.Status > 201 {
+							deleteFileParametersRedis(conn, jobFile)
+							// ... и распечатать статус ответа и информацию об ошибке ...
+							logr.WithFields(logr.Fields{
+								"object": "Elastic",
+								"title":  "Request",
+							}).Errorf("[%d]: %s: %s: %s: %s",
+								d.Index.Status,
+								d.Index.Error.Type,
+								d.Index.Error.Reason,
+								d.Index.Error.Cause.Type,
+								d.Index.Error.Cause.Reason,
+							)
+						}
 					}
 				}
 			}
+			// Закрываем тело ответа, чтобы предотвратить достижение предела для горутин или дескрипторов файлов.
+			res.Body.Close()
 		}
-
-		// Закрываем тело ответа, чтобы предотвратить достижение предела для горутин или дескрипторов файлов.
-		res.Body.Close()
-		buf.Reset() // сбрасываем буфер
+		deleteFileParametersRedis(conn, jobFile) // удаляем ключ
+		setFileParametersRedis(conn, file, pos)  // записываем позицию в базу
 	}
 	c <- keyInPackage
 }
@@ -567,6 +615,18 @@ func initLogging(c *conf) {
 
 }
 
+func getFilesArray(root string) ([]files, error) {
+	var arrFiles []files
+
+	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if !info.IsDir() {
+			arrFiles = append(arrFiles, files{Path: path, Size: info.Size()})
+		}
+		return nil
+	})
+	return arrFiles, err
+}
+
 //=======================================================================================
 func main() {
 
@@ -581,9 +641,40 @@ func main() {
 
 	// maxdop установка
 	runtime.GOMAXPROCS(config.MaxDop)
+
+	// удалим ключи, которые больше не используются
+	conn, err := redis.Dial("tcp", config.RedisAddr,
+		redis.DialUsername(config.RedisLogin),
+		redis.DialPassword(config.RedisPassword),
+		redis.DialDatabase(config.RedisDatabase),
+	)
+
+	if err != nil {
+		logr.WithFields(logr.Fields{
+			"object": "Redis",
+			"title":  "Unable to connect",
+		}).Fatal(err)
+	}
+	defer conn.Close()
+
+	keys, err := redis.Strings(conn.Do("KEYS", "*"))
+	for _, key := range keys {
+		if _, err := os.Stat(key); err != nil {
+			if os.IsNotExist(err) {
+				// если файла больше нет - удалим запись из базы
+				deleteFileParametersRedis(conn, key)
+			} else {
+				logr.WithFields(logr.Fields{
+					"object": "File tech journal",
+				}).Warning(err)
+			}
+		}
+	}
+
 	c := make(chan int)
 
-	files, err := FilePathWalkDir(config.Patch)
+	// получаем файлы логов, сортируем по размеру, определяем в пакеты заданий
+	arr, err := getFilesArray(config.Patch)
 	if err != nil {
 		logr.WithFields(logr.Fields{
 			"object": "Data",
@@ -591,12 +682,20 @@ func main() {
 		}).Error(err)
 	}
 
-	// выделяем пакеты файлов
-	if len(files) == 0 {
-		return
+	if config.Sorting != 0 {
+		sort.SliceStable(arr, func(i, j int) bool {
+
+			if config.Sorting == 1 {
+				return arr[i].Size > arr[j].Size
+			} else {
+				return arr[i].Size < arr[j].Size
+			}
+
+		})
 	}
 
-	packages := getFilesPacked(files, config.MaxDop)
+	packages := getFilesPacked(arr, config.MaxDop)
+
 	for keyInPackage, filesInPackage := range packages {
 		go jobExtractTechLogs(filesInPackage, keyInPackage, &config, c)
 	}

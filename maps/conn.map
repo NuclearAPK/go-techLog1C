@@ -1,0 +1,87 @@
+{
+  "mappings": {
+    "properties": {
+      "t_clientid": {
+        "type": "text"
+      },
+      "clientid": {
+        "type": "text"
+      },
+      "func": {
+        "type": "text"
+      },
+      "calls": {
+        "type": "integer"
+      },
+      "appid": {
+        "type": "text"
+      },
+      "dbms": {
+        "type": "text"
+      },
+      "database": {
+        "type": "text"
+      },
+      "duration": {
+        "type": "long"
+      },
+      "usr": {
+        "type": "text"
+      },
+      "process": {
+        "type": "text"
+      },
+      "txt": {
+        "type": "text"
+      },
+      "osthread": {
+        "type": "text"
+      },
+      "p_processname": {
+        "type": "text"
+      },
+      "name": {
+        "type": "text"
+      },
+      "t_computername": {
+        "type": "text"
+      },
+      "context": {
+        "type": "text"
+      },
+      "descr": {
+        "type": "text"
+      },
+      "sessionid": {
+        "type": "text"
+      },
+      "protected": {
+        "type": "integer"
+      },
+      "t_applicationname": {
+        "type": "text"
+      },
+      "t_connectid": {
+        "type": "text"
+      },
+      "date": {
+        "type": "date"
+      },
+      "processNameID": {
+        "type": "text"
+      },
+      "SourceFile": {
+        "type": "text"
+      },
+      "event_techlog": {
+        "type": "text"
+      },
+      "level": {
+        "type": "integer"
+      },
+      "unclassified": {
+        "type": "text"
+      }
+    }
+  }
+}
