@@ -7,8 +7,22 @@
 #### Elasticsearch особенности настроек:
 Elasticsearch работает на JVM, поэтому очень требователен к настройкам памяти. По умолчанию размер кучи установлен в 1Gb, что крайне мало при массовой операции вставки документов в индексы Elasticsearch. 
 
-1. *XMX/XMS* рекомендуется установить равным половине оперативной памяти, доступной физической/виртуальной машине. Например, если у вас 16Gb, то возможный вариант настройки:
--Xms8000m
--Xmx8000m
+1. **XMX/XMS** рекомендуется установить равным половине оперативной памяти, доступной физической/виртуальной машине. Например, если у вас 16Gb, то возможный вариант настройки:
+-Xms8G
+-Xmx8G [Документация](<https://www.elastic.co/guide/en/elasticsearch/guide/master/_limiting_memory_usage.html>)
 
-[Documentation](<https://www.elastic.co/guide/en/elasticsearch/guide/master/_limiting_memory_usage.html>)
+2. **Очистка старых индексов (использование index lifecycle policy)**. Чем детальнее технологический журнал - тем сильнее будет расти его объем, а значит и индексы в Elasticsearch, это может привести к нехватке свободного места на дисках, где хранятся индексы. Лучшая практика - спустя N дней удалять индексы. 
+Все что необходимо - задать политику жизненного цикла индексов
+https://www.elastic.co/guide/en/elasticsearch/reference/current/set-up-lifecycle-policy.html
+После этого задать темплейт, который будет включать индексы тех журнала
+```
+PUT _template/tech_journal_template
+{
+  "index_patterns": ["tech-*"],                 
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 1,
+    "index.lifecycle.name": "tech_journal_policy"    
+  }
+}
+```
