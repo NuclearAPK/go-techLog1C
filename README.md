@@ -26,3 +26,10 @@ PUT _template/tech_journal_template
   }
 }
 ```
+
+**Известные проблемы**:
+1. circuit_breaking_exception,  [request] Data too large, data for [<reused_arrays>] would be larger than limit of:
+Измените параметры XMX/XMS
+2. es_rejected_execution_exception: rejected execution of coordinating operation
+Уменьшите уровень параллелизма (maxdop), подберите оптимальный размер блока на единицу bulk операции (elastic_bulksize), увеличьте параметр elastic_maxretries в config файле. 
+
