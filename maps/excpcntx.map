@@ -86,7 +86,7 @@
         "type": "text"
       },
       "trans": {
-        "type": "text"
+        "type": "integer"
       },
       "runas": {
         "type": "text"
