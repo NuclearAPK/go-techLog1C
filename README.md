@@ -1,5 +1,48 @@
 # go-techLog1C
-Парсер технологического журнала, основанный на стеке технологий Golang (goroutines) + Redis + Elasticsearch.
+Парсер технологического журнала, основанный на стеке технологий [Golang goroutines](<https://golang.org/>) + [Redis](<https://redis.io/>) + [Elasticsearch](<https://www.elastic.co>).
+
+#### Настройки парсера
+Все настройки указываются в файле settings.yaml
+```
+# Расположение логов тех журнала 1С
+patch: "D:\\tmp\\1C_event_log\\1C_event_log"
+#
+# Параметры подключения к Redis
+redis_addr: "localhost:6379"
+redis_login: ""
+redis_password: ""
+redis_database: 0
+#
+# Параметры подключения к Elasticsearch
+elastic_addr: "http://localhost:9200"
+elastic_login: ""
+elastic_password: ""
+elastic_maxretries: 10
+elastic_bulksize: 2000000
+#
+# Правила формирования индекса Elasticsearch
+# Пример: "tech_journal_{event}_yyyyMMddhh", где event - CONN, EXCP, etc...
+elastic_indx: "tech_journal_{event}_yyyyMMddhh"
+#
+# Типы событий тех журнала, которые могут содержать длинные строки '...' и переносы строк \n
+tech_log_details_events: "Context|Txt|Descr|DeadlockConnectionIntersections|ManagerList|ServerList|Sql|Sdbl"
+#
+# Путь, где будут распологаться логи программы
+patch_logfile: "D:\\tmp\\techLogData\\log"
+#
+# Глубина фиксации ошибок при работе программы:
+#   1 - только ошибки
+#   2 - ошибки и предупреждения 
+#   3 - ошибки, предупреждения и информация
+log_level: 3
+#
+# Уровень параллелизма
+maxdop: 14
+#
+# 0 - отключена сортировка файлов по размеру, 1 - сортировка по убыванию, 2 - сортировка по возрастанию
+# полезно включать при массовых операциях, для равномерного распределения файлов по потокам
+sorting: 0
+```
 
 ## Redis
 NoSQL key-value СУБД. В стеке выполняет роль кэша, для хранения параметров файлов, которые обрабатываются в текущий момент времени и те, которые были обработаны (последняя позиция файла). Почему не используется простой текстовый файл? Все просто - парсер работает в многопоточном режиме, что требует доступ до файла в режиме записи из нескольких потоков. Redis позволяет решать следующие кейсы:
@@ -39,4 +82,5 @@ PUT _template/tech_journal_template
 Измените параметры XMX/XMS
 2. es_rejected_execution_exception: rejected execution of coordinating operation
 Уменьшите уровень параллелизма (maxdop), подберите оптимальный размер блока на единицу bulk операции (elastic_bulksize), увеличьте параметр elastic_maxretries в config файле. 
+3. Долгая индексация, update mapping index. После загрузки каждого документа - если не задана карта индекса - карта создается, что создает накладные расходы, при количестве документов > 1 млн, обновление карты может не уложиться в таймаут по умолчанию (30 сек.). Поэтому, рекомендуется создавать map карты индекса (см. каталог **maps**)
 
