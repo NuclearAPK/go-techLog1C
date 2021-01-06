@@ -82,6 +82,13 @@ PUT _template/tech_journal_template
   }
 }
 ```
+Чтобы ее применить к уже существующим индексам, нужно выполнить следующий запрос
+```
+PUT tech_*/_settings
+{
+  "index.lifecycle.name": "tech_journal_policy" 
+}
+```
 
 **Известные проблемы**:
 1. circuit_breaking_exception,  [request] Data too large, data for [<reused_arrays>] would be larger than limit of:
