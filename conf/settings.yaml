@@ -19,7 +19,7 @@ elastic_bulksize: 2000000
 elastic_indx: "tech_journal_{event}_yyyyMMddhh"
 #
 # Типы событий тех журнала, которые могут содержать длинные строки '...' и переносы строк \n
-tech_log_details_events: "Context|Txt|Descr|DeadlockConnectionIntersections|ManagerList|ServerList|Sql|Sdbl"
+tech_log_details_events: "Context|Txt|Descr|DeadlockConnectionIntersections|ManagerList|ServerList|Sql|Sdbl|Eds"
 #
 # Путь, где будут распологаться логи программы
 patch_logfile: "D:\\tmp\\techLogData\\log"
