@@ -279,8 +279,8 @@ func getMappings() map[string]string {
 				"title":  "Failure to read map file",
 			}).Error(err)
 		}
-		key := strings.Split(file.Path, "\\")[1]
-		key = strings.TrimRight(key, ".map")
+		tmpKey := strings.Split(file.Path, "\\")[1]
+		key := tmpKey[0 : len(tmpKey)-4] //strings.TrimRight(key, ".map")
 		mapping[key] = string(data)
 	}
 	return mapping
@@ -385,6 +385,7 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 		}
 
 		if data == nil {
+			deleteFileParametersRedis(conn, jobFile)
 			continue
 		}
 
@@ -392,6 +393,7 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 		words := re.Split(string(data), -1)
 
 		if headings == nil {
+			deleteFileParametersRedis(conn, jobFile)
 			continue
 		}
 
