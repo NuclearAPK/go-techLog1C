@@ -199,9 +199,16 @@ func replaceSymbols(str *string, config *conf) {
 		regex := regexp.MustCompile(`(?m)#tt[0-9]+`)
 		*str = regex.ReplaceAllString(*str, "#tt")
 	}
+
+	var re = regexp.MustCompile(`(?m)\r\n`)
+
+	i := re.FindStringIndex(*str)
+	if i != nil && len(i) == 2 && i[0] < 2 {
+		*str = strings.Replace(*str, "\r\n", "", 1)
+	}
 }
 
-// Reverse returns its argument string reversed rune-wise left to right.
+// Reverse возвращает инвентированную строку
 func Reverse(s string) string {
 	r := []rune(s)
 	for i, j := 0, len(r)-1; i < len(r)/2; i, j = i+1, j-1 {
@@ -700,13 +707,10 @@ func main() {
 
 	if config.Sorting != 0 {
 		sort.SliceStable(arr, func(i, j int) bool {
-
 			if config.Sorting == 1 {
 				return arr[i].Size > arr[j].Size
-			} else {
-				return arr[i].Size < arr[j].Size
 			}
-
+			return arr[i].Size < arr[j].Size
 		})
 	}
 
