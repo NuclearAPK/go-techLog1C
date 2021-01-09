@@ -11,6 +11,13 @@
 # Расположение логов тех журнала 1С
 patch: "D:\\tmp\\1C_event_log\\1C_event_log"
 #
+# Удалять табуляции в контекстных строках
+delete_tabs_in_contexts: true
+#
+# Заменять постфиксы виртуальных таблиц в контекстах, например #tt36 на #tt 
+# Может использоваться для группировки контекстов
+delete_postfix_in_name_virtual_tables: true
+#
 # Параметры подключения к Redis
 redis_addr: "localhost:6379"
 redis_login: ""
