@@ -27,22 +27,24 @@ import (
 
 //=======================================================================================
 type conf struct {
-	Patch                string `yaml:"patch"`
-	RedisAddr            string `yaml:"redis_addr"`
-	RedisLogin           string `yaml:"redis_login"`
-	RedisPassword        string `yaml:"redis_password"`
-	RedisDatabase        int    `yaml:"redis_database"`
-	ElasticAddr          string `yaml:"elastic_addr"`
-	ElasticLogin         string `yaml:"elastic_login"`
-	ElasticPassword      string `yaml:"elastic_password"`
-	ElasticIndx          string `yaml:"elastic_indx"`
-	ElasticMaxRetrires   int    `yaml:"elastic_maxretries"`
-	ElasticBulkSize      int64  `yaml:"elastic_bulksize"`
-	TechLogDetailsEvents string `yaml:"tech_log_details_events"`
-	MaxDop               int    `yaml:"maxdop"`
-	Sorting              int    `yaml:"sorting"`
-	PatchLogFile         string `yaml:"patch_logfile"`
-	LogLevel             int    `yaml:"log_level"`
+	Patch                            string `yaml:"patch"`
+	RedisAddr                        string `yaml:"redis_addr"`
+	RedisLogin                       string `yaml:"redis_login"`
+	RedisPassword                    string `yaml:"redis_password"`
+	RedisDatabase                    int    `yaml:"redis_database"`
+	ElasticAddr                      string `yaml:"elastic_addr"`
+	ElasticLogin                     string `yaml:"elastic_login"`
+	ElasticPassword                  string `yaml:"elastic_password"`
+	ElasticIndx                      string `yaml:"elastic_indx"`
+	ElasticMaxRetrires               int    `yaml:"elastic_maxretries"`
+	ElasticBulkSize                  int64  `yaml:"elastic_bulksize"`
+	TechLogDetailsEvents             string `yaml:"tech_log_details_events"`
+	MaxDop                           int    `yaml:"maxdop"`
+	Sorting                          int    `yaml:"sorting"`
+	PatchLogFile                     string `yaml:"patch_logfile"`
+	LogLevel                         int    `yaml:"log_level"`
+	DeleteTabsInContexts             bool   `yaml:"delete_tabs_in_contexts"`
+	DeletePostfixInNameVirtualTables bool   `yaml:"delete_postfix_in_name_virtual_tables"`
 }
 
 type bulkResponse struct {
@@ -178,13 +180,24 @@ func getMapEvent(str *string) map[string]string {
 	return paramets
 }
 
-// заменяет , на пробел в строках вида ' , ,  '
-func replaceGaps(str *string) {
-	regexGaps := regexp.MustCompile("('{1}.*?'{1})")
+// заменяет заданные символы в строках, подходящих под регулярные выражения на новые символы
+func replaceGaps(str *string, exp string, old string, new string) {
+	regexGaps := regexp.MustCompile(exp)
 	gapsStrings := regexGaps.FindAllString(*str, -1)
 	for _, gapString := range gapsStrings {
-		rightStringTmp := strings.Replace(*str, gapString, strings.ReplaceAll(gapString, ",", " "), -1)
+		rightStringTmp := strings.Replace(*str, gapString, strings.ReplaceAll(gapString, old, new), -1)
 		*str = rightStringTmp
+	}
+}
+
+func replaceSymbols(str *string, config *conf) {
+	if config.DeleteTabsInContexts {
+		*str = strings.ReplaceAll(*str, "\t", "")
+	}
+
+	if config.DeletePostfixInNameVirtualTables {
+		regex := regexp.MustCompile(`(?m)#tt[0-9]+`)
+		*str = regex.ReplaceAllString(*str, "#tt")
 	}
 }
 
@@ -438,6 +451,7 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 					}
 
 					tmpLen += lenSb + lenGarbageString
+					replaceSymbols(&garbageString, config)
 					multilineMap[strings.ToLower(Reverse(sb.String()))] = garbageString
 				}
 				rightString = strings.TrimRight(garbageStrings[0], ",")
@@ -445,7 +459,7 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 				rightString = words[idx+1]
 			}
 
-			replaceGaps(&rightString)
+			replaceGaps(&rightString, "('{1}.*?'{1})", ",", " ")
 
 			paramets := getMapEvent(&rightString)
 			paramets["date"] = dataEvent

@@ -1,5 +1,10 @@
 # Расположение логов тех журнала 1С
-patch: "D:\\tmp\\1C_event_log\\1C_event_log"
+patch: "D:\\tmp\\1"
+# Удалять табуляции в контекстных строках
+delete_tabs_in_contexts: true
+# Заменять постфиксы виртуальных таблиц в контекстах, например #tt36 на #tt 
+# Может использоваться для группировки контекстов
+delete_postfix_in_name_virtual_tables: true
 #
 # Параметры подключения к Redis
 redis_addr: "localhost:6379"
@@ -11,8 +16,8 @@ redis_database: 0
 elastic_addr: "http://localhost:9200"
 elastic_login: ""
 elastic_password: ""
-elastic_maxretries: 10
-elastic_bulksize: 2000000
+elastic_maxretries: 4
+elastic_bulksize: 5000000
 #
 # Правила формирования индекса Elasticsearch
 # Пример: "tech_journal_{event}_yyyyMMddhh", где event - CONN, EXCP, etc...
@@ -22,7 +27,7 @@ elastic_indx: "tech_journal_{event}_yyyyMMddhh"
 tech_log_details_events: "Context|Txt|Descr|DeadlockConnectionIntersections|ManagerList|ServerList|Sql|Sdbl|Eds"
 #
 # Путь, где будут распологаться логи программы
-patch_logfile: "D:\\tmp\\techLogData\\log"
+patch_logfile: "D:\\tmp\\techLogData\\log\\"
 #
 # Глубина фиксации ошибок при работе программы:
 #   1 - только ошибки
@@ -31,7 +36,7 @@ patch_logfile: "D:\\tmp\\techLogData\\log"
 log_level: 3
 #
 # Уровень параллелизма
-maxdop: 14
+maxdop: 1
 #
 # 0 - отключена сортировка файлов по размеру, 1 - сортировка по убыванию, 2 - сортировка по возрастанию
 # полезно включать при массовых операциях, для равномерного распределения файлов по потокам
