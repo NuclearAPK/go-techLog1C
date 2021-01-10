@@ -103,4 +103,10 @@ PUT tech_*/_settings
 2. es_rejected_execution_exception: rejected execution of coordinating operation
 Уменьшите уровень параллелизма (maxdop), подберите оптимальный размер блока на единицу bulk операции (elastic_bulksize), увеличьте параметр elastic_maxretries в config файле. 
 3. Долгая индексация, update mapping index. После загрузки каждого документа - если не задана карта индекса - карта создается, что создает накладные расходы, при количестве документов > 1 млн, обновление карты может не уложиться в таймаут по умолчанию (30 сек.). Поэтому, рекомендуется создавать map карты индекса (см. каталог **maps**)
+4. При вставке записей в Elasticsearch возникает ошибка [400] validation_exception: Validation Failed: 1: this action would add...
+Необходимо увеличить количество шардов 
+```
+curl -u USER:PASSWD -X PUT localhost:9200/_cluster/settings -H "Content-Type: application/json" -d '{ "persistent": { "cluster.max_shards_per_node": "3000" } }'
+{"acknowledged":true,"persistent":{"cluster":{"max_shards_per_node":"3000"}},"transient":{}}
+```
 
