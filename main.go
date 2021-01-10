@@ -466,7 +466,7 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 				rightString = words[idx+1]
 			}
 
-			replaceGaps(&rightString, "('{1}.*?'{1})", ",", " ")
+			replaceGaps(&rightString, `(?m)('[\S\s]*?')|("[\S\s]*?")`, ",", " ")
 
 			paramets := getMapEvent(&rightString)
 			paramets["date"] = dataEvent
