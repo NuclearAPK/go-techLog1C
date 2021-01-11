@@ -21,9 +21,9 @@ cd "S:\go-techLog1C\"
 techLog1C.exe
 echo on
 ```
-**Linux**: используйте **crontab**. 
+**Linux**: используйте **crontab**. Пример запуска парсера с периодичностью 5 минут:
 ```
-*/10**** /usr/local/techLog1C
+*/5**** /usr/local/techLog1C
 ```
 
 #### Настройки парсера
