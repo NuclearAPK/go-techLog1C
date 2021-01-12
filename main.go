@@ -244,7 +244,7 @@ func getFilesPacked(arrFiles []*files, maxdop int) map[int][]files {
 
 func readFile(file files) ([]byte, int64, error) {
 
-	var lastPosition int64
+	currPosition := file.LastPosition
 
 	openFile, err := os.Open(file.Path)
 	if err != nil {
@@ -258,7 +258,7 @@ func readFile(file files) ([]byte, int64, error) {
 
 	for {
 		n, err := openFile.Read(buffer)
-		lastPosition += int64(n)
+		currPosition += int64(n)
 		if err == io.EOF { // если конец файла
 			break // выходим из цикла
 		}
@@ -266,7 +266,7 @@ func readFile(file files) ([]byte, int64, error) {
 	}
 
 	openFile.Close()
-	return data, lastPosition, nil
+	return data, currPosition, nil
 }
 
 // формирование наименование индекса по правилам, заданным в conf файле
@@ -495,7 +495,7 @@ func jobExtractTechLogs(filesInPackage []files, keyInPackage int, config *conf, 
 			logr.WithFields(logr.Fields{
 				"object": "Data",
 				"title":  "Succeful reading",
-			}).Infof("Package %d, file %s", keyInPackage, file.Path)
+			}).Infof("Package %d, file %s, start_position: %d, end position: %d", keyInPackage, file.Path, file.LastPosition, currentPosition)
 		}
 		// обходим события. Каждому событию соответстует bulk буффер
 		for keyM, buf := range mapEventsBuffer {
