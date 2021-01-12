@@ -67,8 +67,12 @@ type bulkResponse struct {
 }
 
 type files struct {
-	Path string
-	Size int64
+	Path          string
+	Size          int64
+	LastPosition  int64
+	FileDate      string
+	ProcessNameID string
+	BlokingID     string
 }
 
 func (c *conf) getConfig() *conf {
@@ -221,15 +225,15 @@ func isLetter(c rune) bool {
 	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
 }
 
-func getFilesPacked(arrFiles []files, maxdop int) map[int][]string {
+func getFilesPacked(arrFiles []*files, maxdop int) map[int][]files {
 
-	take := make(map[int][]string)
+	take := make(map[int][]files)
 
 	lenFiles := len(arrFiles)
 
 	var j int = 0
 	for i := 0; i < lenFiles; i++ {
-		take[j] = append(take[j], arrFiles[i].Path)
+		take[j] = append(take[j], *arrFiles[i])
 		j++
 		if j == maxdop {
 			j = 0
@@ -238,21 +242,23 @@ func getFilesPacked(arrFiles []files, maxdop int) map[int][]string {
 	return take
 }
 
-func readFile(file string, pos *int64) ([]byte, error) {
+func readFile(file files) ([]byte, int64, error) {
 
-	openFile, err := os.Open(file)
+	var lastPosition int64
+
+	openFile, err := os.Open(file.Path)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	buffer := make([]byte, 64)
 	var data []byte
 
-	openFile.Seek(*pos, 0)
+	openFile.Seek(file.LastPosition, 0)
 
 	for {
 		n, err := openFile.Read(buffer)
-		*pos = *pos + int64(n)
+		lastPosition += int64(n)
 		if err == io.EOF { // если конец файла
 			break // выходим из цикла
 		}
@@ -260,7 +266,7 @@ func readFile(file string, pos *int64) ([]byte, error) {
 	}
 
 	openFile.Close()
-	return data, nil
+	return data, lastPosition, nil
 }
 
 // формирование наименование индекса по правилам, заданным в conf файле
@@ -291,8 +297,7 @@ func getMappings() map[string]string {
 	}
 
 	for _, file := range files {
-		var pos int64 = 0
-		data, err := readFile(file.Path, &pos)
+		data, _, err := readFile(file)
 		if err != nil {
 			logr.WithFields(logr.Fields{
 				"object": "Map file",
@@ -300,13 +305,13 @@ func getMappings() map[string]string {
 			}).Error(err)
 		}
 		tmpKey := strings.Split(file.Path, "\\")[1]
-		key := tmpKey[0 : len(tmpKey)-4] //strings.TrimRight(key, ".map")
+		key := tmpKey[0 : len(tmpKey)-4]
 		mapping[key] = string(data)
 	}
 	return mapping
 }
 
-func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf, c chan int) {
+func jobExtractTechLogs(filesInPackage []files, keyInPackage int, config *conf, c chan int) {
 
 	var (
 		rightString string
@@ -368,36 +373,10 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 
 	for _, file := range filesInPackage {
 
-		// проверим что файла нет в текущей обработке
-		jobFile := "job_" + file
-		inProgress := getFileParametersRedis(conn, jobFile)
-		if inProgress == 1 {
-			continue
-		}
-
-		// устанавливаем блокировку на файл
-		setFileParametersRedis(conn, jobFile, 1)
-
-		// 5. получаем дату из имени файла и тип процесса
-		fileSplitter := strings.Split(file, "\\")
-		lenArray := len(fileSplitter)
-		if lenArray < 2 {
-			continue
-		}
-
-		fileDate := strings.TrimRight(fileSplitter[lenArray-1], ".log")
-
-		// 6. проверяем индекс, если нет - создаем
-		processNameID := strings.ToLower(fileSplitter[lenArray-2])
-
-		// 7. получаем идентификатор файла для DB Redis
-		pos := getFileParametersRedis(conn, file)
-
-		// 0.8. считываем файл с позиции idFile
-		data, err := readFile(file, &pos)
+		data, currentPosition, err := readFile(file)
 
 		if err != nil {
-			deleteFileParametersRedis(conn, jobFile)
+			deleteFileParametersRedis(conn, file.BlokingID)
 			logr.WithFields(logr.Fields{
 				"object": "Data",
 				"title":  "Open file data",
@@ -405,7 +384,7 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 		}
 
 		if data == nil {
-			deleteFileParametersRedis(conn, jobFile)
+			deleteFileParametersRedis(conn, file.BlokingID)
 			continue
 		}
 
@@ -413,7 +392,7 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 		words := re.Split(string(data), -1)
 
 		if headings == nil {
-			deleteFileParametersRedis(conn, jobFile)
+			deleteFileParametersRedis(conn, file.BlokingID)
 			continue
 		}
 
@@ -427,7 +406,7 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 		for idx, word := range headings {
 			word := strings.TrimRight(word, "-")
 
-			dataEvent := getDateEvent(fileDate, word)
+			dataEvent := getDateEvent(file.FileDate, word)
 			var multilineMap = make(map[string]string)
 
 			if reContextstrings.MatchString(words[idx+1]) {
@@ -470,17 +449,17 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 
 			paramets := getMapEvent(&rightString)
 			paramets["date"] = dataEvent
-			paramets["processNameID"] = processNameID
+			paramets["processNameID"] = file.ProcessNameID
 
 			for keyM, valueM := range multilineMap {
 				paramets[keyM] = valueM
 			}
-			paramets["SourceFile"] = file
+			paramets["SourceFile"] = file.Path
 
 			// Конвертация карты в JSON
 			empData, err := json.Marshal(paramets)
 			if err != nil {
-				deleteFileParametersRedis(conn, jobFile)
+				deleteFileParametersRedis(conn, file.BlokingID)
 				logr.WithFields(logr.Fields{
 					"object": "Data",
 					"title":  "Failure marshal struct",
@@ -516,7 +495,7 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 			logr.WithFields(logr.Fields{
 				"object": "Data",
 				"title":  "Succeful reading",
-			}).Infof("Package %d, file %s", keyInPackage, file)
+			}).Infof("Package %d, file %s", keyInPackage, file.Path)
 		}
 		// обходим события. Каждому событию соответстует bulk буффер
 		for keyM, buf := range mapEventsBuffer {
@@ -541,7 +520,7 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 					es.Indices.Create.WithTimeout(60),
 				)
 				if err != nil {
-					deleteFileParametersRedis(conn, jobFile)
+					deleteFileParametersRedis(conn, file.BlokingID)
 					logr.WithFields(logr.Fields{
 						"object": "Elastic",
 						"title":  "Cannot create index",
@@ -556,7 +535,7 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 				es.Bulk.WithRefresh("false"),
 			)
 			if err != nil {
-				deleteFileParametersRedis(conn, jobFile)
+				deleteFileParametersRedis(conn, file.BlokingID)
 				logr.WithFields(logr.Fields{
 					"object": "Elastic",
 					"title":  "Failure indexing batch",
@@ -565,13 +544,13 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 			// если ошибка запроса - выводим ошибку
 			if res.IsError() {
 				if err := json.NewDecoder(res.Body).Decode(&raw); err != nil {
-					deleteFileParametersRedis(conn, jobFile)
+					deleteFileParametersRedis(conn, file.BlokingID)
 					logr.WithFields(logr.Fields{
 						"object": "Elastic",
 						"title":  "Failure to to parse response body",
 					}).Fatal(err)
 				} else {
-					deleteFileParametersRedis(conn, jobFile)
+					deleteFileParametersRedis(conn, file.BlokingID)
 					logr.WithFields(logr.Fields{
 						"object": "Elastic",
 						"title":  "Request",
@@ -585,7 +564,7 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 				// Успешный ответ может по-прежнему содержать ошибки для определенных документов...
 			} else {
 				if err := json.NewDecoder(res.Body).Decode(&blk); err != nil {
-					deleteFileParametersRedis(conn, jobFile)
+					deleteFileParametersRedis(conn, file.BlokingID)
 					logr.WithFields(logr.Fields{
 						"object": "Elastic",
 						"title":  "Failure to to parse response body",
@@ -594,7 +573,7 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 					for _, d := range blk.Items {
 						// ... для любых других HTTP статусов > 201 ...
 						if d.Index.Status > 201 {
-							deleteFileParametersRedis(conn, jobFile)
+							deleteFileParametersRedis(conn, file.BlokingID)
 							// ... и распечатать статус ответа и информацию об ошибке ...
 							logr.WithFields(logr.Fields{
 								"object": "Elastic",
@@ -613,8 +592,8 @@ func jobExtractTechLogs(filesInPackage []string, keyInPackage int, config *conf,
 			// Закрываем тело ответа, чтобы предотвратить достижение предела для горутин или дескрипторов файлов.
 			res.Body.Close()
 		}
-		deleteFileParametersRedis(conn, jobFile) // удаляем ключ
-		setFileParametersRedis(conn, file, pos)  // записываем позицию в базу
+		deleteFileParametersRedis(conn, file.BlokingID)          // удаляем ключ
+		setFileParametersRedis(conn, file.Path, currentPosition) // записываем позицию в базу
 	}
 	c <- keyInPackage
 }
@@ -705,16 +684,55 @@ func main() {
 		}).Error(err)
 	}
 
+	/* проверяем что файлы не заблокированы, ставим блокировку в основном сеансе
+	считываем позицию файла и сравниваем с текущим размером, если ничего не изменилось -
+	удаляем такие файлы из массива
+	*/
+
+	var listFiles []*files
+
+	for i := 0; i < len(arr); i++ {
+
+		// проверим что файла нет в текущей обработке
+		jobFile := "job_" + arr[i].Path
+		if getFileParametersRedis(conn, jobFile) == 1 {
+			continue
+		}
+
+		// получаем последнюю прочитанную позицию из redis
+		lastPosition := getFileParametersRedis(conn, arr[i].Path)
+		if lastPosition == arr[i].Size || arr[i].Size < 100 {
+			continue
+		}
+
+		// получаем дату из имени файла и тип процесса
+		fileSplitter := strings.Split(arr[i].Path, "\\")
+		lenArray := len(fileSplitter)
+		if lenArray < 2 {
+			continue
+		}
+
+		// устанавливаем блокировку на файл
+		setFileParametersRedis(conn, jobFile, 1)
+
+		arr[i].LastPosition = lastPosition
+		arr[i].FileDate = strings.TrimRight(fileSplitter[lenArray-1], ".log")
+		arr[i].ProcessNameID = strings.ToLower(fileSplitter[lenArray-2])
+		arr[i].BlokingID = jobFile
+
+		listFiles = append(listFiles, &arr[i])
+	}
+
 	if config.Sorting != 0 {
-		sort.SliceStable(arr, func(i, j int) bool {
+		sort.SliceStable(listFiles, func(i, j int) bool {
 			if config.Sorting == 1 {
-				return arr[i].Size > arr[j].Size
+				return listFiles[i].Size > listFiles[j].Size
 			}
-			return arr[i].Size < arr[j].Size
+			return listFiles[i].Size < listFiles[j].Size
 		})
 	}
 
-	packages := getFilesPacked(arr, config.MaxDop)
+	packages := getFilesPacked(listFiles, config.MaxDop)
 
 	for keyInPackage, filesInPackage := range packages {
 		go jobExtractTechLogs(filesInPackage, keyInPackage, &config, c)
