@@ -35,6 +35,9 @@ patch_logfile: "D:\\tmp\\techLogData\\log\\"
 #   3 - ошибки, предупреждения и информация
 log_level: 3
 #
+# Срок жизни файлов логов в днях
+log_life_span: 4
+#
 # Уровень параллелизма
 maxdop: 5
 #

@@ -43,6 +43,7 @@ type conf struct {
 	Sorting                          int    `yaml:"sorting"`
 	PatchLogFile                     string `yaml:"patch_logfile"`
 	LogLevel                         int    `yaml:"log_level"`
+	LogLifeSpan                      int    `yaml:"log_life_span"`
 	DeleteTabsInContexts             bool   `yaml:"delete_tabs_in_contexts"`
 	DeletePostfixInNameVirtualTables bool   `yaml:"delete_postfix_in_name_virtual_tables"`
 }
@@ -71,6 +72,7 @@ type files struct {
 	Size          int64
 	LastPosition  int64
 	FileDate      string
+	DataCreate    time.Time
 	ProcessNameID string
 	BlokingID     string
 }
@@ -617,12 +619,44 @@ func initLogging(c *conf) {
 
 }
 
+func deleteOldLogFiles(c *conf) {
+
+	lifeSpan := c.LogLifeSpan
+	if lifeSpan == 0 {
+		lifeSpan = 1
+	}
+
+	files, err := getFilesArray(c.PatchLogFile)
+	if err != nil {
+		logr.WithFields(logr.Fields{
+			"object": "Scan log directory",
+			"title":  "Select life span files",
+		}).Warning(err)
+		return
+	}
+
+	t := time.Now()
+
+	for _, file := range files {
+		duration := t.Sub(file.DataCreate)
+
+		if (int(duration.Hours()) - 24*c.LogLifeSpan) >= 0 {
+			if err = os.Remove(file.Path); err != nil {
+				logr.WithFields(logr.Fields{
+					"object": "Scan log directory",
+					"title":  "Delete life span files",
+				}).Warning(err)
+			}
+		}
+	}
+}
+
 func getFilesArray(root string) ([]files, error) {
 	var arrFiles []files
 
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
-			arrFiles = append(arrFiles, files{Path: path, Size: info.Size()})
+			arrFiles = append(arrFiles, files{Path: path, Size: info.Size(), DataCreate: info.ModTime()})
 		}
 		return nil
 	})
@@ -640,6 +674,7 @@ func main() {
 
 	// подключаем логи
 	initLogging(&config)
+	deleteOldLogFiles(&config)
 
 	// maxdop установка
 	runtime.GOMAXPROCS(config.MaxDop)
@@ -661,7 +696,13 @@ func main() {
 
 	keys, err := redis.Strings(conn.Do("KEYS", "*"))
 	for _, key := range keys {
-		if _, err := os.Stat(key); err != nil {
+		var currKey string
+		if strings.ContainsAny(key, "job_") {
+			currKey = strings.Replace(key, "job_", "", -1)
+		} else {
+			currKey = key
+		}
+		if _, err := os.Stat(currKey); err != nil {
 			if os.IsNotExist(err) {
 				// если файла больше нет - удалим запись из базы
 				deleteFileParametersRedis(conn, key)
