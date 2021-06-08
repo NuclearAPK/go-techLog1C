@@ -130,4 +130,7 @@ PUT tech_*/_settings
 curl -u USER:PASSWD -X PUT localhost:9200/_cluster/settings -H "Content-Type: application/json" -d '{ "persistent": { "cluster.max_shards_per_node": "3000" } }'
 {"acknowledged":true,"persistent":{"cluster":{"max_shards_per_node":"3000"}},"transient":{}}
 ```
+5. Время событий в Кибане показывается относительно UTC. 
+Все что необходимо сделать - выставить в настройках необходимый часовой пояс
+
 
