@@ -132,5 +132,5 @@ curl -u USER:PASSWD -X PUT localhost:9200/_cluster/settings -H "Content-Type: ap
 ```
 5. Время событий в Кибане показывается относительно UTC. 
 Все что необходимо сделать - выставить в настройках необходимый часовой пояс
-
+![Настройки часового пояса](https://github.com/NuclearAPK/go-techLog1C/blob/main/utc.jpg)
 
