@@ -298,6 +298,8 @@ func getMappings() map[string]string {
 		}).Error(err)
 	}
 
+	separator := string(os.PathSeparator)
+
 	for _, file := range files {
 		data, _, err := readFile(file)
 		if err != nil {
@@ -306,11 +308,27 @@ func getMappings() map[string]string {
 				"title":  "Failure to read map file",
 			}).Error(err)
 		}
-		tmpKey := strings.Split(file.Path, "\\")[1]
+
+		tmpKey := strings.Split(file.Path, separator)[1]
 		key := tmpKey[0 : len(tmpKey)-4]
 		mapping[key] = string(data)
 	}
 	return mapping
+}
+
+func createElasticsearchClient(config *conf) (*elasticsearch.Client, error) {
+
+	cfgElastic := elasticsearch.Config{
+		Addresses:     []string{config.ElasticAddr},
+		Username:      config.ElasticLogin,
+		Password:      config.ElasticPassword,
+		RetryOnStatus: []int{502, 503, 504, 429},
+		RetryBackoff:  func(i int) time.Duration { return time.Duration(i) * 100 * time.Millisecond },
+		MaxRetries:    config.ElasticMaxRetrires,
+		EnableMetrics: true,
+	}
+	es, err := elasticsearch.NewClient(cfgElastic)
+	return es, err
 }
 
 func jobExtractTechLogs(filesInPackage []files, keyInPackage int, config *conf, c chan int) {
@@ -324,45 +342,15 @@ func jobExtractTechLogs(filesInPackage []files, keyInPackage int, config *conf, 
 	)
 
 	// 1. подключаемся к эластичному
-	cfgElastic := elasticsearch.Config{
-		Addresses:     []string{config.ElasticAddr},
-		Username:      config.ElasticLogin,
-		Password:      config.ElasticPassword,
-		RetryOnStatus: []int{502, 503, 504, 429},
-		RetryBackoff:  func(i int) time.Duration { return time.Duration(i) * 100 * time.Millisecond },
-		MaxRetries:    config.ElasticMaxRetrires,
-		EnableMetrics: true,
-	}
-	es, err := elasticsearch.NewClient(cfgElastic)
-	if err != nil {
-		logr.WithFields(logr.Fields{
-			"object": "Elastic",
-			"title":  "Creating the client",
-		}).Fatal(err)
-	}
-
-	res, err = es.Info()
-	if err != nil {
-		logr.WithFields(logr.Fields{
-			"object": "Elastic",
-			"title":  "Unable to get response",
-		}).Fatal(err)
-	}
-	res.Body.Close()
+	es, _ := createElasticsearchClient(config)
 
 	// 2. подключаемся к redis
-	conn, err := redis.Dial("tcp", config.RedisAddr,
+	conn, _ := redis.Dial("tcp", config.RedisAddr,
 		redis.DialUsername(config.RedisLogin),
 		redis.DialPassword(config.RedisPassword),
 		redis.DialDatabase(config.RedisDatabase),
 	)
 
-	if err != nil {
-		logr.WithFields(logr.Fields{
-			"object": "Redis",
-			"title":  "Unable to connect",
-		}).Fatal(err)
-	}
 	defer conn.Close()
 
 	// 3. считываем мэппинг для индексов elastic из map файлов
@@ -694,7 +682,25 @@ func main() {
 	}
 	defer conn.Close()
 
-	keys, err := redis.Strings(conn.Do("KEYS", "*"))
+	// проверим что es доступен
+	es, err := createElasticsearchClient(&config)
+	if err != nil {
+		logr.WithFields(logr.Fields{
+			"object": "Elastic",
+			"title":  "Creating the client",
+		}).Fatal(err)
+	}
+
+	res, err := es.Info()
+	if err != nil {
+		logr.WithFields(logr.Fields{
+			"object": "Elastic",
+			"title":  "Unable to get response",
+		}).Fatal(err)
+	}
+	res.Body.Close()
+
+	keys, _ := redis.Strings(conn.Do("KEYS", "*"))
 	for _, key := range keys {
 		var currKey string
 		if strings.ContainsAny(key, "job_") {
@@ -731,6 +737,7 @@ func main() {
 	*/
 
 	var listFiles []*files
+	separator := string(os.PathSeparator)
 
 	for i := 0; i < len(arr); i++ {
 
@@ -747,7 +754,7 @@ func main() {
 		}
 
 		// получаем дату из имени файла и тип процесса
-		fileSplitter := strings.Split(arr[i].Path, "\\")
+		fileSplitter := strings.Split(arr[i].Path, separator)
 		lenArray := len(fileSplitter)
 		if lenArray < 2 {
 			continue

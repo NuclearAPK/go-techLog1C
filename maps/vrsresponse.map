@@ -1,0 +1,39 @@
+{
+  "mappings": {
+    "properties": {
+      "SourceFile": {
+        "type": "text"
+      },
+      "date": {
+        "type": "date"
+      },
+      "duration": {
+        "type": "long"
+      },
+      "event_techlog": {
+        "type": "text"
+      },
+      "level": {
+        "type": "text"
+      },
+      "osthread": {
+        "type": "text"
+      },
+      "headers": {
+        "type": "text"
+      },
+      "process": {
+        "type": "text"
+      },
+      "phrase": {
+        "type": "text"
+      },
+      "status": {
+        "type": "text"
+      },
+      "processNameID": {
+        "type": "text"
+      }
+    }
+  }
+}

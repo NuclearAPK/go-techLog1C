@@ -1,5 +1,5 @@
 # Расположение логов тех журнала 1С
-patch: "D:\\tmp\\1"
+patch: "D:\\temp\\1"
 # Удалять табуляции в контекстных строках
 delete_tabs_in_contexts: true
 # Заменять постфиксы виртуальных таблиц в контекстах, например #tt36 на #tt 
@@ -24,10 +24,10 @@ elastic_bulksize: 5000000
 elastic_indx: "tech_journal_{event}_yyyyMMddhh"
 #
 # Типы событий тех журнала, которые могут содержать длинные строки '...' и переносы строк \n
-tech_log_details_events: "Context|Txt|Descr|DeadlockConnectionIntersections|ManagerList|ServerList|Sql|Sdbl|Eds"
+tech_log_details_events: "Context|Txt|Descr|DeadlockConnectionIntersections|ManagerList|ServerList|Sql|Sdbl|Eds|URI|Headers"
 #
 # Путь, где будут распологаться логи программы
-patch_logfile: "D:\\tmp\\techLogData\\log\\"
+patch_logfile: "D:\\Lab\\projects\\go-techLog1C\\logs\\"
 #
 # Глубина фиксации ошибок при работе программы:
 #   1 - только ошибки
