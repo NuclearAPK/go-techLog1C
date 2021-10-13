@@ -20,7 +20,7 @@
         "type": "text"
       },
       "level": {
-        "type": "text"
+        "type": "integer"
       },
       "process": {
         "type": "text"
