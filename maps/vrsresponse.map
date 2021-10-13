@@ -14,7 +14,7 @@
         "type": "text"
       },
       "level": {
-        "type": "text"
+        "type": "integer"
       },
       "osthread": {
         "type": "text"

@@ -6,44 +6,47 @@
       },
       "event_techlog": {
         "type": "text"
-      },	
-      "context": {
+      },
+      "date": {
+        "type": "date"
+      },
+      "duration": {
+        "type": "long"
+      },
+      "appid": {
+        "type": "text"
+      },
+      "dbms": {
         "type": "text"
       },
       "database": {
         "type": "text"
       },	  
-      "date": {
-        "type": "date"
-      },	  
-      "dbms": {
+      "context": {
         "type": "text"
-      },
-      "duration": {
-        "type": "long"
-      },
+      },	  
       "level": {
         "type": "integer"
       },	  
+      "func": {
+        "type": "text"
+      },	  
       "osthread": {
         "type": "text"
-      },	  
-      "process": {
-        "type": "text"
-      },
+      },	
       "p_processname": {
         "type": "text"
-      },	  
+      },	
+      "process": {
+        "type": "text"
+      },	
       "processNameID": {
         "type": "text"
       },	  
-      "t_applicationname": {
-        "type": "text"
-      },
-      "t_connectid": {
+      "sessionid": {
         "type": "text"
       },	  
-      "sessionid": {
+      "t_applicationname": {
         "type": "text"
       },	  
       "t_clientid": {
@@ -51,11 +54,14 @@
       },	  
       "t_computername": {
         "type": "text"
-      },
-      "waitconnections": {
+      },	  
+      "t_connectid": {
+        "type": "text"
+      },		  
+      "usr": {
         "type": "text"
       },	  
-      "usr": {
+      "trans": {
         "type": "text"
       },
       "unclassified": {
