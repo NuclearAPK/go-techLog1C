@@ -62,7 +62,7 @@
         "type": "text"
       },	  
       "trans": {
-        "type": "text"
+        "type": "integer"
       },
       "unclassified": {
         "type": "text"

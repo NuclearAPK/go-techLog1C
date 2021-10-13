@@ -20,7 +20,7 @@
         "type": "text"
       },
       "callwait": {
-        "type": "text"
+        "type": "long"
       },
       "usr": {
         "type": "text"
@@ -92,7 +92,7 @@
         "type": "text"
       },
       "port": {
-        "type": "text"
+        "type": "integer"
       },
       "module": {
         "type": "text"
@@ -116,7 +116,7 @@
         "type": "text"
       },
       "first": {
-        "type": "text"
+        "type": "boolean"
       },
       "sessionid": {
         "type": "text"

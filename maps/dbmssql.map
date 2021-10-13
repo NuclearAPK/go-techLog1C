@@ -23,7 +23,7 @@
         "type": "text"
       },
       "trans": {
-        "type": "text"
+        "type": "integer"
       },	  
       "osthread": {
         "type": "text"
