@@ -209,7 +209,7 @@ func replaceSymbols(str *string, config *conf) {
 	var re = regexp.MustCompile(`(?m)\r\n`)
 
 	i := re.FindStringIndex(*str)
-	if i != nil && len(i) == 2 && i[0] < 2 {
+	if i != nil && len(i) == 2 && (i[0] < 2 || i[1] == len(*str)) {
 		*str = strings.Replace(*str, "\r\n", "", 1)
 	}
 }
@@ -433,6 +433,7 @@ func jobExtractTechLogs(filesInPackage []files, keyInPackage int, config *conf, 
 				rightString = strings.TrimRight(garbageStrings[0], ",")
 			} else {
 				rightString = words[idx+1]
+				replaceSymbols(&rightString, config)
 			}
 
 			replaceGaps(&rightString, `(?m)('[\S\s]*?')|("[\S\s]*?")`, ",", " ")
