@@ -3,12 +3,15 @@ package main
 import (
 	"bytes"
 	"crypto/md5"
+	"crypto/tls"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -46,6 +49,7 @@ type conf struct {
 	LogLifeSpan                      int    `yaml:"log_life_span"`
 	DeleteTabsInContexts             bool   `yaml:"delete_tabs_in_contexts"`
 	DeletePostfixInNameVirtualTables bool   `yaml:"delete_postfix_in_name_virtual_tables"`
+	InsecureSkipVerify               bool   `yaml:"skip_verify_certificates"`
 }
 
 type bulkResponse struct {
@@ -326,6 +330,16 @@ func createElasticsearchClient(config *conf) (*elasticsearch.Client, error) {
 		RetryBackoff:  func(i int) time.Duration { return time.Duration(i) * 100 * time.Millisecond },
 		MaxRetries:    config.ElasticMaxRetrires,
 		EnableMetrics: true,
+		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout: time.Second * 5,
+			}).DialContext,
+
+			ResponseHeaderTimeout: time.Second * 4, // prevent hanging connections
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: config.InsecureSkipVerify,
+			},
+		},
 	}
 	es, err := elasticsearch.NewClient(cfgElastic)
 	return es, err

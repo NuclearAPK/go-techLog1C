@@ -18,6 +18,9 @@ elastic_login: ""
 elastic_password: ""
 elastic_maxretries: 4
 elastic_bulksize: 5000000
+# Если ES в контейнере и доступен по https, возможно игнорировать самоподписанную цепочку сертификатов.
+#skip_verify_certificates: true
+
 #
 # Правила формирования индекса Elasticsearch
 # Пример: "tech_journal_{event}_yyyyMMddhh", где event - CONN, EXCP, etc...
