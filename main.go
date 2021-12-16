@@ -641,6 +641,11 @@ func deleteOldLogFiles(c *conf) {
 	t := time.Now()
 
 	for _, file := range files {
+		fname := filepath.Base(file.Path)
+		if !strings.HasPrefix(fname, "techLog1C_") {
+			// избегает удаления не наших лог файлов, например при неверном указании пользователем нашего лог каталога
+			continue
+		}
 		duration := t.Sub(file.DataCreate)
 
 		if (int(duration.Hours()) - 24*c.LogLifeSpan) >= 0 {
@@ -718,7 +723,7 @@ func main() {
 	keys, _ := redis.Strings(conn.Do("KEYS", "*"))
 	for _, key := range keys {
 		var currKey string
-		if strings.ContainsAny(key, "job_") {
+		if strings.Contains(key, "job_") {
 			currKey = strings.Replace(key, "job_", "", -1)
 		} else {
 			currKey = key
