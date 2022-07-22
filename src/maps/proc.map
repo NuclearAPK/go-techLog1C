@@ -1,0 +1,78 @@
+{
+  "mappings": {
+    "properties": {
+      "t_clientid": {
+        "type": "text"
+      },
+      "duration": {
+        "type": "long"
+      },
+      "usr": {
+        "type": "text"
+      },
+      "process": {
+        "type": "text"
+      },
+      "p_processname": {
+        "type": "text"
+      },
+      "name": {
+        "type": "text"
+      },
+      "osthread": {
+        "type": "text"
+      },
+      "t_computername": {
+        "type": "text"
+      },
+      "context": {
+        "type": "text"
+      },
+      "syncport": {
+        "type": "integer"
+      },
+      "port": {
+        "type": "integer"
+      },
+      "sessionid": {
+        "type": "text"
+      },
+      "t_applicationname": {
+        "type": "text"
+      },
+      "t_connectid": {
+        "type": "text"
+      },
+      "finish": {
+        "type": "text"
+      },
+      "runas": {
+        "type": "text"
+      },
+      "txt": {
+        "type": "text"
+      },
+      "err": {
+        "type": "integer"
+      },
+      "date": {
+        "type": "date"
+      },
+      "processNameID": {
+        "type": "text"
+      },
+      "SourceFile": {
+        "type": "text"
+      },
+      "event_techlog": {
+        "type": "text"
+      },
+      "level": {
+        "type": "integer"
+      },
+      "unclassified": {
+        "type": "text"
+      }
+    }
+  }
+}

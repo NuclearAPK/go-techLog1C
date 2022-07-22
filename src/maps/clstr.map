@@ -1,0 +1,144 @@
+{
+  "mappings": {
+    "properties": {
+      "t_clientid": {
+        "type": "text"
+      },
+      "t_connectid": {
+        "type": "text"
+      },
+      "t_computername": {
+        "type": "text"
+      },
+      "applicationext": {
+        "type": "text"
+      },
+      "t_applicationname": {
+        "type": "text"
+      },
+      "p_processname": {
+        "type": "text"
+      },
+      "appid": {
+        "type": "text"
+      },
+      "average_rt": {
+        "type": "text"
+      },
+      "context": {
+        "type": "text"
+      },
+      "current_rt": {
+        "type": "text"
+      },
+      "database": {
+        "type": "text"
+      },
+      "dbms": {
+        "type": "text"
+      },
+      "dstaddr": {
+        "type": "text"
+      },
+      "dstsrv": {
+        "type": "text"
+      },
+      "dsturl": {
+        "type": "text"
+      },
+      "dstpid": {
+        "type": "text"
+      },
+      "dstid": {
+        "type": "text"
+      },
+      "event": {
+        "type": "text"
+      },
+      "infobase": {
+        "type": "text"
+      },
+      "duration": {
+        "type": "long"
+      },
+      "process": {
+        "type": "text"
+      },
+      "txt": {
+        "type": "text"
+      },
+      "osthread": {
+        "type": "text"
+      },
+      "srcurl": {
+        "type": "text"
+      },
+      "servicename": {
+        "type": "text"
+      },
+      "serverlist": {
+        "type": "text"
+      },
+      "request": {
+        "type": "text"
+      },
+      "ref": {
+        "type": "text"
+      },
+      "extdata": {
+        "type": "text"
+      },
+      "host_pid": {
+        "type": "text"
+      },
+      "message": {
+        "type": "text"
+      },
+      "managerlist": {
+        "type": "text"
+      },
+      "rmngrurl": {
+        "type": "text"
+      },
+      "targetcall": {
+        "type": "text"
+      },
+      "sessionid": {
+        "type": "text"
+      },
+      "clusterid": {
+        "type": "text"
+      },
+      "srcaddr": {
+        "type": "text"
+      },
+      "srcpid": {
+        "type": "text"
+      },
+      "srcid": {
+        "type": "text"
+      },
+      "usr": {
+        "type": "text"
+      },
+      "date": {
+        "type": "date"
+      },
+      "processNameID": {
+        "type": "text"
+      },
+      "SourceFile": {
+        "type": "text"
+      },
+      "event_techlog": {
+        "type": "text"
+      },
+      "level": {
+        "type": "integer"
+      },
+      "unclassified": {
+        "type": "text"
+      }
+    }
+  }
+}

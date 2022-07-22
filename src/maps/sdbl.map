@@ -1,0 +1,72 @@
+{
+  "mappings": {
+    "properties": {
+      "SourceFile": {
+        "type": "text"
+      },
+      "event_techlog": {
+        "type": "text"
+      },
+      "date": {
+        "type": "date"
+      },
+      "duration": {
+        "type": "long"
+      },
+      "appid": {
+        "type": "text"
+      },
+      "dbms": {
+        "type": "text"
+      },
+      "database": {
+        "type": "text"
+      },	  
+      "context": {
+        "type": "text"
+      },	  
+      "level": {
+        "type": "integer"
+      },	  
+      "func": {
+        "type": "text"
+      },	  
+      "osthread": {
+        "type": "text"
+      },	
+      "p_processname": {
+        "type": "text"
+      },	
+      "process": {
+        "type": "text"
+      },	
+      "processNameID": {
+        "type": "text"
+      },	  
+      "sessionid": {
+        "type": "text"
+      },	  
+      "t_applicationname": {
+        "type": "text"
+      },	  
+      "t_clientid": {
+        "type": "text"
+      },	  
+      "t_computername": {
+        "type": "text"
+      },	  
+      "t_connectid": {
+        "type": "text"
+      },		  
+      "usr": {
+        "type": "text"
+      },	  
+      "trans": {
+        "type": "integer"
+      },
+      "unclassified": {
+        "type": "text"
+      }
+    }
+  }
+}

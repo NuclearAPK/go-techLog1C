@@ -1,0 +1,150 @@
+{
+  "mappings": {
+    "properties": {
+      "t_clientid": {
+        "type": "text"
+      },
+      "clientid": {
+        "type": "text"
+      },
+      "callid": {
+        "type": "text"
+      },
+      "duration": {
+        "type": "long"
+      },
+      "osthread": {
+        "type": "text"
+      },
+      "database": {
+        "type": "text"
+      },
+      "callwait": {
+        "type": "long"
+      },
+      "usr": {
+        "type": "text"
+      },
+      "username": {
+        "type": "text"
+      },
+      "txt": {
+        "type": "text"
+      },
+      "process": {
+        "type": "text"
+      },
+      "p_processname": {
+        "type": "text"
+      },
+      "processname": {
+        "type": "text"
+      },
+      "srcprocessname": {
+        "type": "text"
+      },
+      "srcname": {
+        "type": "text"
+      },
+      "name": {
+        "type": "text"
+      },
+      "mname": {
+        "type": "text"
+      },
+      "iname": {
+        "type": "text"
+      },
+      "method": {
+        "type": "text"
+      },
+      "interface": {
+        "type": "text"
+      },
+      "connectstring": {
+        "type": "text"
+      },
+      "servercomputername": {
+        "type": "text"
+      },
+      "clientcomputername": {
+        "type": "text"
+      },
+      "t_computername": {
+        "type": "text"
+      },
+      "context": {
+        "type": "text"
+      },
+      "searchstring": {
+        "type": "text"
+      },
+      "sql": {
+        "type": "text"
+      },
+      "sdbl": {
+        "type": "text"
+      },
+      "trans": {
+        "type": "integer"
+      },
+      "runas": {
+        "type": "text"
+      },
+      "port": {
+        "type": "integer"
+      },
+      "module": {
+        "type": "text"
+      },
+      "report": {
+        "type": "text"
+      },
+      "func": {
+        "type": "text"
+      },
+      "form": {
+        "type": "text"
+      },
+      "formitem": {
+        "type": "text"
+      },
+      "dbms": {
+        "type": "text"
+      },
+      "dbpid": {
+        "type": "text"
+      },
+      "first": {
+        "type": "boolean"
+      },
+      "sessionid": {
+        "type": "text"
+      },
+      "t_applicationname": {
+        "type": "text"
+      },
+      "t_connectid": {
+        "type": "text"
+      },
+      "date": {
+        "type": "date"
+      },
+      "processNameID": {
+        "type": "text"
+      },
+      "SourceFile": {
+        "type": "text"
+      },
+      "event_techlog": {
+        "type": "text"
+      },
+      "level": {
+        "type": "integer"
+      },
+      "unclassified": {
+        "type": "text"
+      }
+    }
+  }
+}
