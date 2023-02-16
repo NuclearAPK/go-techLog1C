@@ -1,0 +1,60 @@
+{
+  "mappings": {
+    "properties": {
+      "SourceFile": {
+        "type": "text"
+      },
+      "event_techlog": {
+        "type": "text"
+      },
+      "date": {
+        "type": "date"
+      },
+	  "method": {
+        "type": "text"
+      },	
+	  "t_clientid": {
+        "type": "text"
+      },	 
+      "duration": {
+        "type": "long"
+      },
+	  "MName": {
+        "type": "text"
+      },
+	  "iname": {
+        "type": "text"
+      },
+	  "usr": {
+        "type": "text"
+      },	
+      "p_processname": {
+        "type": "text"
+      },	  
+      "process": {
+        "type": "text"
+      },	  	  
+      "name": {
+        "type": "text"
+      },
+	  "sessionid": {
+        "type": "text"
+      },	  
+      "t_applicationname": {
+        "type": "text"
+      },	 
+      "t_computername": {
+        "type": "text"
+      },	 
+      "t_connectid": {
+        "type": "text"
+      },	
+      "context": {
+        "type": "text"
+      },
+      "unclassified": {
+        "type": "text"
+      }
+    }
+  }
+}
