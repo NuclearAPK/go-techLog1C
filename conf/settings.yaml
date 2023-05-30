@@ -1,5 +1,5 @@
 # Расположение логов тех журнала 1С
-patch: "D:\\temp\\1"
+patch: "D:\\temp\\1C_log"
 # Удалять табуляции в контекстных строках
 delete_tabs_in_contexts: true
 # Заменять постфиксы виртуальных таблиц в контекстах, например #tt36 на #tt 
@@ -7,17 +7,23 @@ delete_tabs_in_contexts: true
 delete_postfix_in_name_virtual_tables: true
 #
 # Параметры подключения к Redis
-redis_addr: "localhost:6379"
+redis_addr: "192.168.0.7:6379"
 redis_login: ""
 redis_password: ""
 redis_database: 0
 #
 # Параметры подключения к Elasticsearch
-elastic_addr: "http://localhost:9200"
+elastic_addr: "http://192.168.0.7:9200"
 elastic_login: ""
 elastic_password: ""
 elastic_maxretries: 4
+# Таймаут в секундах
+elastic_timeout: 20
+# Таймаут ожидания заголовка ответа от эластика
+elastic_timeout_header: 18
 elastic_bulksize: 5000000
+# Размер в байтах одного события. Некоторые события типа SDBL могут занимать более 100мб
+#elastic_max_content_length: 1000000
 # Если ES в контейнере и доступен по https, возможно игнорировать самоподписанную цепочку сертификатов.
 #skip_verify_certificates: true
 
@@ -30,7 +36,7 @@ elastic_indx: "tech_journal_{event}_yyyyMMddhh"
 tech_log_details_events: "Context|Txt|Descr|DeadlockConnectionIntersections|ManagerList|ServerList|Sql|Sdbl|Eds|URI|Headers"
 #
 # Путь, где будут распологаться логи программы
-patch_logfile: "D:\\Lab\\projects\\go-techLog1C\\logs\\"
+patch_logfile: "D:\\Temp\\fucklogs\\"
 #
 # Глубина фиксации ошибок при работе программы:
 #   1 - только ошибки

@@ -28,7 +28,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-//=======================================================================================
+// =======================================================================================
 type conf struct {
 	Patch                            string `yaml:"patch"`
 	RedisAddr                        string `yaml:"redis_addr"`
@@ -40,6 +40,9 @@ type conf struct {
 	ElasticPassword                  string `yaml:"elastic_password"`
 	ElasticIndx                      string `yaml:"elastic_indx"`
 	ElasticMaxRetrires               int    `yaml:"elastic_maxretries"`
+	ElasticTimeout                   int    `yaml:"elastic_timeout"`
+	ElasticTimeoutHeader             int    `yaml:"elastic_timeout_header"`
+	ElasticMaxContentLength          int    `yaml:"elastic_max_content_length"`
 	ElasticBulkSize                  int64  `yaml:"elastic_bulksize"`
 	TechLogDetailsEvents             string `yaml:"tech_log_details_events"`
 	MaxDop                           int    `yaml:"maxdop"`
@@ -332,10 +335,10 @@ func createElasticsearchClient(config *conf) (*elasticsearch.Client, error) {
 		EnableMetrics: true,
 		Transport: &http.Transport{
 			DialContext: (&net.Dialer{
-				Timeout: time.Second * 5,
+				Timeout: time.Second * time.Duration(config.ElasticTimeout),
 			}).DialContext,
 
-			ResponseHeaderTimeout: time.Second * 4, // prevent hanging connections
+			ResponseHeaderTimeout: time.Second * time.Duration(config.ElasticTimeoutHeader), // prevent hanging connections
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: config.InsecureSkipVerify,
 			},
@@ -474,6 +477,10 @@ func jobExtractTechLogs(filesInPackage []files, keyInPackage int, config *conf, 
 			hash := md5.Sum(empData)
 			md5String := hex.EncodeToString(hash[:])
 
+			// if len(empData) > config.ElasticMaxContentLength {
+			// 	empData = empData[:config.ElasticMaxContentLength]
+			// }
+
 			jsonStr := append(empData, "\n"...)
 
 			// заголовок bulk
@@ -553,6 +560,8 @@ func jobExtractTechLogs(filesInPackage []files, keyInPackage int, config *conf, 
 					logr.WithFields(logr.Fields{
 						"object": "Elastic",
 						"title":  "Failure to to parse response body",
+						"source": keyMaster,
+						"file":   file.Path,
 					}).Fatal(err)
 				} else {
 					deleteFileParametersRedis(conn, file.BlokingID)
@@ -573,6 +582,8 @@ func jobExtractTechLogs(filesInPackage []files, keyInPackage int, config *conf, 
 					logr.WithFields(logr.Fields{
 						"object": "Elastic",
 						"title":  "Failure to to parse response body",
+						"source": keyMaster,
+						"file":   file.Path,
 					}).Fatal(err)
 				} else {
 					for _, d := range blk.Items {
@@ -671,7 +682,7 @@ func getFilesArray(root string) ([]files, error) {
 	return arrFiles, err
 }
 
-//=======================================================================================
+// =======================================================================================
 func main() {
 
 	defer duration(track())
