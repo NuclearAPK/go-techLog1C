@@ -30,7 +30,7 @@ import (
 
 // =======================================================================================
 type conf struct {
-	Patch                            string `yaml:"patch"`
+	Path                             string `yaml:"path"`
 	RedisAddr                        string `yaml:"redis_addr"`
 	RedisLogin                       string `yaml:"redis_login"`
 	RedisPassword                    string `yaml:"redis_password"`
@@ -47,7 +47,7 @@ type conf struct {
 	TechLogDetailsEvents             string `yaml:"tech_log_details_events"`
 	MaxDop                           int    `yaml:"maxdop"`
 	Sorting                          int    `yaml:"sorting"`
-	PatchLogFile                     string `yaml:"patch_logfile"`
+	PathLogFile                      string `yaml:"path_logfile"`
 	LogLevel                         int    `yaml:"log_level"`
 	LogLifeSpan                      int    `yaml:"log_life_span"`
 	DeleteTabsInContexts             bool   `yaml:"delete_tabs_in_contexts"`
@@ -617,11 +617,11 @@ func jobExtractTechLogs(filesInPackage []files, keyInPackage int, config *conf, 
 func initLogging(c *conf) {
 
 	year, month, day := time.Now().Date()
-	if _, err := os.Stat(c.PatchLogFile); os.IsNotExist(err) {
-		os.Mkdir(c.PatchLogFile, 2)
+	if _, err := os.Stat(c.PathLogFile); os.IsNotExist(err) {
+		os.Mkdir(c.PathLogFile, 2)
 	}
 
-	logFileName := c.PatchLogFile + "techLog1C_" + strconv.Itoa(year) + strconv.Itoa(int(month)) + strconv.Itoa(day) + ".json"
+	logFileName := c.PathLogFile + "techLog1C_" + strconv.Itoa(year) + strconv.Itoa(int(month)) + strconv.Itoa(day) + ".json"
 	fileLog, err := os.OpenFile(logFileName, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 
 	if err != nil {
@@ -640,7 +640,7 @@ func deleteOldLogFiles(c *conf) {
 		lifeSpan = 1
 	}
 
-	files, err := getFilesArray(c.PatchLogFile)
+	files, err := getFilesArray(c.PathLogFile)
 	if err != nil {
 		logr.WithFields(logr.Fields{
 			"object": "Scan log directory",
@@ -754,7 +754,7 @@ func main() {
 	c := make(chan int)
 
 	// получаем файлы логов, сортируем по размеру, определяем в пакеты заданий
-	arr, err := getFilesArray(config.Patch)
+	arr, err := getFilesArray(config.Path)
 	if err != nil {
 		logr.WithFields(logr.Fields{
 			"object": "Data",
