@@ -51,7 +51,13 @@
       },	
       "context": {
         "type": "text"
+      },      
+      "level": {
+        "type": "text"
       },
+      "stack": {
+        "type": "integer"
+      },      
       "unclassified": {
         "type": "text"
       }

@@ -65,8 +65,11 @@
         "type": "text"
       },
       "level": {
-        "type": "integer"
+        "type": "text"
       },
+      "stack": {
+        "type": "integer"
+      },      
       "unclassified": {
         "type": "text"
       }

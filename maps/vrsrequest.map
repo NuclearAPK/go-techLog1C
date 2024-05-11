@@ -20,8 +20,11 @@
         "type": "text"
       },
       "level": {
-        "type": "integer"
+        "type": "text"
       },
+      "stack": {
+        "type": "integer"
+      },      
       "process": {
         "type": "text"
       },
