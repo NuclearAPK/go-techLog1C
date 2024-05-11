@@ -182,7 +182,7 @@ func getMapEvent(str *string) map[string]string {
 			case 1:
 				Property = "event_techlog"
 			case 2:
-				Property = "level"
+				Property = "stack"
 			default:
 				Property = "unclassified"
 			}
