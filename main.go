@@ -170,7 +170,7 @@ func getMapEvent(str *string) map[string]string {
 		if runeIndex > 0 {
 
 			PropertyTmp := strings.ToLower(Event[0:runeIndex])
-			Property = strings.Replace(PropertyTmp, ":", "_", 1)
+			Property = strings.Replace(strings.Replace(PropertyTmp, ":", "_", 1), "-", "_", 1)
 			ValueTmp := Event[runeIndex+1:]
 			Value = ValueTmp
 
@@ -182,7 +182,7 @@ func getMapEvent(str *string) map[string]string {
 			case 1:
 				Property = "event_techlog"
 			case 2:
-				Property = "level"
+				Property = "stack"
 			default:
 				Property = "unclassified"
 			}
